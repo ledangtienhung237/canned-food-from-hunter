@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Canned Response Manager - Hunter Edition</title>
+  <style>
+    :root { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
+      --primary: #0078D4; 
+      --border: #e5e7eb;
+      --bg: #f0f2f5;
+      --danger: #d13438;
+      --success: #107c10;
+      --warning: #605e5c;
+    }
+    body { margin: 0; background: var(--bg); color: #24292f; }
+    
+    /* Toast */
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: #323130; color: #fff; padding: 12px 20px; border-radius: 4px; animation: fadeIn 0.3s, fadeOut 0.3s 2.7s forwards; font-size: 14px; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+    header { padding: 12px 24px; background: #fff; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    header h1 { margin: 0; font-size: 16px; color: var(--primary); font-weight: 600; }
+    
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 18px; height: calc(100vh - 50px); box-sizing: border-box; }
+    .grid { display: grid; grid-template-columns: 1fr 400px; gap: 18px; height: 100%; }
+    
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+    .card h2 { margin: 0; padding: 12px 16px; background: #faf9f8; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; color: #605e5c; }
+    .card .body { padding: 16px; overflow-y: auto; flex: 1; display:flex; flex-direction:column; }
+    
+    .row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+    .col { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    label { display: block; font-size: 12px; font-weight: 600; color:#605e5c; }
+    
+    input, textarea, select, button { width: 100%; border: 1px solid #8a8886; border-radius: 4px; padding: 8px 10px; font-size: 13px; box-sizing: border-box; background: #fff; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    textarea { min-height: 250px; resize: vertical; line-height: 1.5; font-family: 'Consolas', monospace; }
+    
+    button { cursor: pointer; font-weight: 500; background: #fff; color: #201f1e; width: auto; padding: 8px 16px; transition: all 0.2s; }
+    button:hover { background: #edebe9; }
+    button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    button.primary:hover { background: #005a9e; }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    button.danger:hover { background: #fdf3f4; }
+    button.cancel { border-color: var(--warning); color: var(--warning); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+    
+    .btns { display:flex; gap:10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .var-panel { background: #f0f6ff; border: 1px solid #c7e0f4; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+    .var-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 8px; }
+    
+    .list { display:flex; flex-direction:column; gap:8px; flex: 1; overflow-y: auto; }
+    .item { border: 1px solid var(--border); border-radius: 6px; padding: 10px; cursor: pointer; }
+    .item:hover { background: #faf9f8; }
+    .item.selected { border-color: var(--primary); background: #eff6fc; border-left: 4px solid var(--primary); }
+    .item .title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+    .item .preview { font-size: 12px; color: #605e5c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;}
+    .pill { display:inline-block; font-size: 10px; padding: 2px 8px; border-radius:12px; background:#f3f2f1; color:#605e5c; font-weight: 500; }
+    .pill.sc { background: #e1dfdd; color: #201f1e; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 Entra ID Response Manager</h1>
+  <div style="font-size:12px; color:#605e5c;">Hunter's Toolset</div>
+</header>
+
+<div id="toast-container"></div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <h2>✏️ Editor</h2>
+      <div class="body">
+        <div class="row">
+          <div class="col" style="flex:3">
+            <label>Title</label>
+            <input id="title" placeholder="e.g., ADFS - Cert Renewal Steps" />
+          </div>
+          <div class="col" style="flex:1">
+            <label>Shortcut</label>
+            <input id="shortcut" placeholder="e.g., adfs_cert" />
+          </div>
+          <div class="col" style="flex:1.5">
+            <label>Category</label>
+            <input id="category" list="category-list" placeholder="Select..." />
+            <datalist id="category-list"></datalist>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label>Tags</label>
+            <input id="tags" placeholder="e.g., SevA, ADFS, Troubleshooting" />
+          </div>
+        </div>
+
+        <div id="varPanel" class="var-panel" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="font-size:13px;">⚡ Quick Fill Variables</label>
+            <button id="fillAllBtn" class="primary" style="padding:4px 10px; font-size:11px;">Apply All</button>
+          </div>
+          <div id="varGrid" class="var-grid"></div>
+        </div>
+
+        <div class="col" style="flex: 1; margin-bottom: 12px;">
+          <label>Content</label>
+          <textarea id="message" placeholder="Hi {{Name}},\n\n..."></textarea>
+        </div>
+
+        <div class="btns">
+          <button class="primary" id="saveBtn">💾 Save</button>
+          <button id="newBtn">📄 New</button>
+          <button class="cancel" id="cancelBtn">🚫 Cancel</button>
+          <button class="danger" id="deleteBtn" disabled>🗑️ Delete</button>
+          <div style="flex:1"></div>
+          <button id="copyBtn" class="primary" style="background:#107c10; border-color:#107c10;">📋 Smart Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📚 Library <span id="countBadge" style="font-size:12px; margin-left:8px;">(0)</span></h2>
+      <div class="body">
+        <div class="row">
+          <div class="col"><input id="search" placeholder="🔍 Search..." /></div>
+        </div>
+        <div class="row">
+           <div class="col"><select id="categoryFilter"><option value="">All Categories</option></select></div>
+           <div class="col"><select id="sortBy"><option value="updated_desc">Recent</option><option value="title_asc">A-Z</option></select></div>
+        </div>
+        
+        <div id="list" class="list"></div>
+        
+        <div class="btns" style="margin-top: auto;">
+           <button id="exportBtn" style="font-size:11px;">📤 Backup</button>
+           <button id="importBtn" style="font-size:11px;">📥 Import</button>
+           <input id="importFile" type="file" accept="application/json" style="display:none" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "canned_responses_hunter";
+  const $ = (id) => document.getElementById(id);
+  const state = { templates: [], selectedId: null, detectedVars: [] };
+  const uid = () => "id_" + Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+  const toast = (msg, type = "info") => {
+    const el = document.createElement("div"); el.className = `toast ${type}`; el.textContent = msg;
+    $("toast-container").appendChild(el); setTimeout(() => el.remove(), 3000);
+  };
+
+  function load() {
+    try { state.templates = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { state.templates = []; }
+    if(state.templates.length === 0) seed();
+  }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.templates)); }
+  function seed() {
+    state.templates = [{ id: uid(), title: "Example Template", shortcut: "ex", category: "General", tags: ["Demo"], message: "Hi {{Name}}, this is a demo." }];
+  }
+
+  function getForm() {
+    return {
+      title: $("title").value.trim(), shortcut: $("shortcut").value.trim(), category: $("category").value.trim(),
+      tags: $("tags").value.split(",").map(x=>x.trim()).filter(Boolean), message: $("message").value
+    };
+  }
+
+  function setForm(t) {
+    $("title").value = t?.title || ""; $("shortcut").value = t?.shortcut || ""; $("category").value = t?.category || "";
+    $("tags").value = (t?.tags || []).join(", "); $("message").value = t?.message || "";
+    $("deleteBtn").disabled = !t;
+    detectVariables();
+  }
+
+  function detectVariables() {
+    const text = $("message").value;
+    const regex = /\{\{([^}]+)\}\}/g;
+    const vars = new Set();
+    let match;
+    while ((match = regex.exec(text)) !== null) vars.add(match[1].trim());
+    state.detectedVars = Array.from(vars);
+    const panel = $("varPanel");
+    const grid = $("varGrid");
+    grid.innerHTML = "";
+    if (state.detectedVars.length === 0) { panel.style.display = "none"; return; }
+    panel.style.display = "block";
+    state.detectedVars.forEach(v => {
+      const div = document.createElement("div"); div.className = "var-item";
+      div.innerHTML = `<label>${escapeHtml(v)}</label><input class="var-input" data-key="${escapeHtml(v)}" placeholder="Value">`;
+      grid.appendChild(div);
+    });
+  }
+
+  function fillVariables() {
+    let msg = $("message").value;
+    let count = 0;
+    document.querySelectorAll(".var-input").forEach(input => {
+      if (input.value) {
+        msg = msg.replace(new RegExp(`\\{\\{\\s*${input.dataset.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}\\}`, 'g'), input.value);
+        count++;
+      }
+    });
+    $("message").value = msg; detectVariables();
+    if(count>0) toast(`Filled ${count} vars`, "success");
+  }
+
+  function selectTemplate(id) { state.selectedId = id; setForm(state.templates.find(x => x.id === id)); renderList(); }
+  function upsertTemplate() {
+    const f = getForm(); if (!f.title) return toast("Title required", "error");
+    if (state.selectedId) {
+      const idx = state.templates.findIndex(x => x.id === state.selectedId);
+      if (idx >= 0) state.templates[idx] = { ...state.templates[idx], ...f, updatedAt: Date.now() };
+    } else {
+      const newId = uid(); state.templates.unshift({ id: newId, ...f, createdAt: Date.now(), updatedAt: Date.now() });
+      state.selectedId = newId;
+    }
+    save(); refreshFilters(); renderList(); toast("Saved", "success");
+  }
+  function deleteTemplate() {
+    if (!state.selectedId || !confirm("Delete?")) return;
+    state.templates = state.templates.filter(x => x.id !== state.selectedId);
+    state.selectedId = null; setForm(null); save(); refreshFilters(); renderList(); toast("Deleted", "info");
+  }
+
+  // --- Cancel Logic ---
+  $("cancelBtn").onclick = () => {
+    if (state.selectedId) {
+      // Revert to saved state
+      selectTemplate(state.selectedId);
+      toast("Reverted changes", "info");
+    } else {
+      // Clear form
+      setForm(null);
+      toast("Cleared form", "info");
+    }
+  };
+
+  async function smartCopy() {
+    const msg = $("message").value;
+    if (msg.match(/\{\{([^}]+)\}\}/) && !confirm("⚠️ Variables ({{..}}) detected. Copy anyway?")) return;
+    try { await navigator.clipboard.writeText(msg); toast("Copied!", "success"); } catch { toast("Copy failed", "error"); }
+  }
+
+  function renderList() {
+    const q = $("search").value.toLowerCase(); const cat = $("categoryFilter").value; const sort = $("sortBy").value;
+    let list = state.templates.filter(t => (t.title+t.shortcut+t.message+t.tags.join(" ")).toLowerCase().includes(q) && (!cat || t.category === cat));
+    list.sort((a,b) => sort === "title_asc" ? a.title.localeCompare(b.title) : (b.updatedAt||0) - (a.updatedAt||0));
+    $("countBadge").textContent = `(${list.length})`; $("list").innerHTML = "";
+    list.forEach(t => {
+      const div = document.createElement("div"); div.className = `item ${t.id === state.selectedId ? 'selected' : ''}`;
+      div.onclick = () => selectTemplate(t.id);
+      div.innerHTML = `<div class="title">${escapeHtml(t.title)}</div><div class="preview">${escapeHtml(t.message.substring(0,60))}...</div><div class="tags">${t.shortcut?`<span class="pill sc">/${escapeHtml(t.shortcut)}</span>`:''}<span class="pill">${escapeHtml(t.category)}</span></div>`;
+      $("list").appendChild(div);
+    });
+  }
+
+  function refreshFilters() {
+    const cats = [...new Set(state.templates.map(x=>x.category).filter(Boolean))].sort();
+    $("categoryFilter").innerHTML = `<option value="">All Categories</option>` + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    $("category-list").innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join("");
+  }
+
+  $("saveBtn").onclick = upsertTemplate; $("deleteBtn").onclick = deleteTemplate; $("newBtn").onclick = () => { state.selectedId = null; setForm(null); renderList(); };
+  $("copyBtn").onclick = smartCopy; $("message").oninput = detectVariables; $("fillAllBtn").onclick = fillVariables;
+  ["search", "categoryFilter", "sortBy"].forEach(id => $(id).oninput = renderList);
+  $("exportBtn").onclick = () => { const b = new Blob([JSON.stringify(state.templates)],{type:"application/json"}); const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href=u; a.download="hunter_backup.json"; a.click(); };
+  $("importBtn").onclick = () => $("importFile").click();
+  $("importFile").onchange = (e) => { const r = new FileReader(); r.onload = () => { try { state.templates = JSON.parse(r.result); save(); load(); refreshFilters(); renderList(); toast("Imported!"); } catch { toast("Error", "error"); } }; if(e.target.files[0]) r.readAsText(e.target.files[0]); e.target.value = ""; };
+  
+  load(); refreshFilters(); renderList();
+</script>
+</body>
+</html>
