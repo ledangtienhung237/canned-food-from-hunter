@@ -1,22 +1,31 @@
-name: Deploy static site to Azure Web App
+name: Deploy static site to Azure Web App - myexpressapp-hunter
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_20D80C85B72E4A9C9F4C47EB8E388972 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E9A21C367E0E4777B5B8D62108F3B841 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1B3D06E4F5CB4ECCB85C609C8E980BC3 }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: myexpressapp-hunter
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          slot-name: Production
           package: .
